@@ -1,7 +1,6 @@
 // src/lib/openai.ts
 import OpenAI from 'openai'
-import { Difficulty } from '@prisma/client'
-import type { GeneratedQuestion } from '@/types'
+import type { GeneratedQuestion, Difficulty } from '@/types'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

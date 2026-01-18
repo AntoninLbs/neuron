@@ -1,73 +1,42 @@
 // src/app/(app)/stats/page.tsx
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
+'use client'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { calculateLevel } from '@/lib/utils'
-import { Flame, Target, BookOpen, Trophy, TrendingUp, Calendar } from 'lucide-react'
+import { Flame, Target, BookOpen, Trophy, TrendingUp } from 'lucide-react'
 
-export const metadata = {
-  title: 'Statistiques',
-}
+export default function StatsPage() {
+  // Stats par défaut pour le MVP
+  const stats = {
+    xp: 0,
+    level: 1,
+    progress: 0,
+    xpForNext: 100,
+    streak: 0,
+    longestStreak: 0,
+    accuracy: 0,
+    totalCorrect: 0,
+    totalAnswered: 0,
+    projects: 0,
+    totalCards: 0,
+  }
 
-export default async function StatsPage() {
-  const session = await auth()
-  if (!session?.user) redirect('/auth/signin')
-
-  const [userStats, projects, recentReviews] = await Promise.all([
-    prisma.userStats.findUnique({
-      where: { userId: session.user.id },
-    }),
-    prisma.project.findMany({
-      where: { userId: session.user.id, isActive: true },
-      include: {
-        _count: { select: { cards: true } },
-      },
-    }),
-    prisma.review.findMany({
-      where: {
-        card: {
-          project: { userId: session.user.id },
-        },
-      },
-      orderBy: { answeredAt: 'desc' },
-      take: 100,
-    }),
-  ])
-
-  const levelInfo = calculateLevel(userStats?.totalXp || 0)
-  const accuracy = userStats && userStats.totalAnswered > 0
-    ? Math.round((userStats.totalCorrect / userStats.totalAnswered) * 100)
-    : 0
-
-  const totalCards = projects.reduce((sum, p) => sum + p._count.cards, 0)
-  
-  // Calculer les stats des 7 derniers jours
+  // Données du graphique (7 derniers jours)
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = new Date()
-    date.setDate(date.getDate() - i)
-    date.setHours(0, 0, 0, 0)
-    return date
-  }).reverse()
-
-  const reviewsByDay = last7Days.map(day => {
-    const nextDay = new Date(day)
-    nextDay.setDate(nextDay.getDate() + 1)
-    
-    return recentReviews.filter(r => {
-      const reviewDate = new Date(r.answeredAt)
-      return reviewDate >= day && reviewDate < nextDay
-    }).length
+    date.setDate(date.getDate() - (6 - i))
+    return {
+      day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+      count: 0,
+      isToday: i === 6,
+    }
   })
-
-  const maxReviews = Math.max(...reviewsByDay, 1)
 
   return (
     <div className="container max-w-lg px-4 py-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Statistiques</h1>
-        <p className="text-muted-foreground">Tes performances d'apprentissage</p>
+        <p className="text-muted-foreground">Tes performances d&apos;apprentissage</p>
       </div>
 
       {/* XP et Niveau */}
@@ -76,23 +45,19 @@ export default async function StatsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-white/80 text-sm">Total XP</p>
-              <p className="text-3xl font-bold">{userStats?.totalXp?.toLocaleString() || 0}</p>
+              <p className="text-3xl font-bold">{stats.xp.toLocaleString()}</p>
             </div>
             <div className="text-right">
               <p className="text-white/80 text-sm">Niveau</p>
-              <p className="text-3xl font-bold">{levelInfo.level}</p>
+              <p className="text-3xl font-bold">{stats.level}</p>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Prochain niveau</span>
-              <span>{levelInfo.currentXp} / {levelInfo.xpForNextLevel}</span>
+              <span>{stats.xp} / {stats.xpForNext}</span>
             </div>
-            <Progress 
-              value={levelInfo.progress} 
-              className="h-2 bg-white/20"
-              indicatorClassName="bg-white"
-            />
+            <Progress value={stats.progress} className="h-2 bg-white/20" />
           </div>
         </CardContent>
       </Card>
@@ -102,25 +67,25 @@ export default async function StatsPage() {
         <StatCard
           icon={<Flame className="h-5 w-5 text-orange-500" />}
           title="Streak"
-          value={userStats?.currentStreak || 0}
-          subtitle={`Record: ${userStats?.longestStreak || 0} jours`}
+          value={stats.streak}
+          subtitle={`Record: ${stats.longestStreak} jours`}
         />
         <StatCard
           icon={<Target className="h-5 w-5 text-green-500" />}
           title="Précision"
-          value={`${accuracy}%`}
-          subtitle={`${userStats?.totalCorrect || 0} correctes`}
+          value={`${stats.accuracy}%`}
+          subtitle={`${stats.totalCorrect} correctes`}
         />
         <StatCard
           icon={<BookOpen className="h-5 w-5 text-blue-500" />}
           title="Questions"
-          value={userStats?.totalAnswered || 0}
-          subtitle={`${totalCards} cartes actives`}
+          value={stats.totalAnswered}
+          subtitle={`${stats.totalCards} cartes actives`}
         />
         <StatCard
           icon={<Trophy className="h-5 w-5 text-purple-500" />}
           title="Projets"
-          value={projects.length}
+          value={stats.projects}
           subtitle="en cours"
         />
       </div>
@@ -135,63 +100,31 @@ export default async function StatsPage() {
         </CardHeader>
         <CardContent>
           <div className="flex items-end justify-between h-32 gap-2">
-            {reviewsByDay.map((count, i) => {
-              const height = (count / maxReviews) * 100
-              const day = last7Days[i]
-              const dayName = day.toLocaleDateString('fr-FR', { weekday: 'short' })
-              const isToday = i === 6
-              
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="text-xs text-muted-foreground">{count}</div>
+            {last7Days.map((item, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="text-xs text-muted-foreground">{item.count}</div>
+                <div 
+                  className="w-full rounded-t-md bg-muted relative overflow-hidden"
+                  style={{ height: '80px' }}
+                >
                   <div 
-                    className="w-full rounded-t-md bg-muted relative overflow-hidden"
-                    style={{ height: '80px' }}
-                  >
-                    <div 
-                      className={`absolute bottom-0 w-full rounded-t-md transition-all ${
-                        isToday ? 'bg-neuron-500' : 'bg-neuron-300 dark:bg-neuron-700'
-                      }`}
-                      style={{ height: `${Math.max(height, 5)}%` }}
-                    />
-                  </div>
-                  <div className={`text-xs ${isToday ? 'font-bold text-neuron-500' : 'text-muted-foreground'}`}>
-                    {dayName}
-                  </div>
+                    className={`absolute bottom-0 w-full rounded-t-md transition-all ${
+                      item.isToday ? 'bg-neuron-500' : 'bg-neuron-300 dark:bg-neuron-700'
+                    }`}
+                    style={{ height: '5%' }}
+                  />
                 </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Projets */}
-      {projects.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Progression par projet</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {projects.map(project => (
-              <div key={project.id}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">{project.name}</span>
-                  <span className="text-muted-foreground">
-                    {project.masteredCards} / {project._count.cards} maîtrisées
-                  </span>
+                <div className={`text-xs ${item.isToday ? 'font-bold text-neuron-500' : 'text-muted-foreground'}`}>
+                  {item.day}
                 </div>
-                <Progress 
-                  value={project._count.cards > 0 
-                    ? (project.masteredCards / project._count.cards) * 100 
-                    : 0
-                  } 
-                  className="h-2"
-                />
               </div>
             ))}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Commence à apprendre pour voir ton activité ici 📊
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

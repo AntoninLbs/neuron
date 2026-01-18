@@ -2,10 +2,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '@/components/auth-provider'
 import { useTheme } from 'next-themes'
-import { Moon, Sun, LogOut, User, Settings, Flame } from 'lucide-react'
+import { Moon, Sun, LogOut, User, Flame } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -22,8 +22,14 @@ interface HeaderProps {
 
 export function Header({ streak = 0 }: HeaderProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const router = useRouter()
+  const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
+  }
 
   return (
     <header className="sticky top-0 z-50 hidden md:block border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -79,7 +85,7 @@ export function Header({ streak = 0 }: HeaderProps) {
           </Button>
 
           {/* User menu */}
-          {session?.user && (
+          {user && (
             <div className="flex items-center gap-2">
               <Link href="/profile">
                 <Button variant="ghost" size="icon-sm">
@@ -89,7 +95,7 @@ export function Header({ streak = 0 }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={handleSignOut}
                 aria-label="Se déconnecter"
               >
                 <LogOut className="h-4 w-4" />

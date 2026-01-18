@@ -1,56 +1,58 @@
 // src/app/(app)/profile/page.tsx
-import { auth, signOut } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/auth-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { calculateLevel, formatDate } from '@/lib/utils'
 import { ThemeToggle } from './theme-toggle'
 import { LogOut, User, Flame, Trophy, Target, Calendar } from 'lucide-react'
 
-export const metadata = {
-  title: 'Profil',
-}
+export default function ProfilePage() {
+  const router = useRouter()
+  const { user, signOut } = useAuth()
 
-export default async function ProfilePage() {
-  const session = await auth()
-  if (!session?.user) redirect('/auth/signin')
+  // Stats par défaut pour le MVP
+  const stats = {
+    level: 1,
+    xp: 0,
+    xpForNext: 100,
+    progress: 0,
+    streak: 0,
+    longestStreak: 0,
+    accuracy: 0,
+    totalCorrect: 0,
+    totalAnswered: 0,
+    badges: 0,
+    projects: 0,
+  }
 
-  const [userStats, projectsCount, badgesCount] = await Promise.all([
-    prisma.userStats.findUnique({
-      where: { userId: session.user.id },
-    }),
-    prisma.project.count({
-      where: { userId: session.user.id, isActive: true },
-    }),
-    prisma.userBadge.count({
-      where: { userId: session.user.id },
-    }),
-  ])
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
+  }
 
-  const levelInfo = calculateLevel(userStats?.totalXp || 0)
-  const accuracy = userStats && userStats.totalAnswered > 0
-    ? Math.round((userStats.totalCorrect / userStats.totalAnswered) * 100)
-    : 0
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utilisateur'
+  const userImage = user?.user_metadata?.avatar_url
 
   return (
     <div className="container max-w-lg px-4 py-6 space-y-6">
       {/* Header profil */}
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-neuron-400 to-neuron-600">
-          {session.user.image ? (
+        <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-neuron-400 to-neuron-600 overflow-hidden">
+          {userImage ? (
             <img
-              src={session.user.image}
+              src={userImage}
               alt=""
-              className="h-full w-full rounded-full object-cover"
+              className="h-full w-full object-cover"
             />
           ) : (
             <User className="h-10 w-10 text-white" />
           )}
         </div>
-        <h1 className="text-xl font-bold">{session.user.name || 'Utilisateur'}</h1>
-        <p className="text-sm text-muted-foreground">{session.user.email}</p>
+        <h1 className="text-xl font-bold">{userName}</h1>
+        <p className="text-sm text-muted-foreground">{user?.email}</p>
       </div>
 
       {/* Niveau */}
@@ -59,13 +61,13 @@ export default async function ProfilePage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-yellow-500" />
-              <span className="font-semibold">Niveau {levelInfo.level}</span>
+              <span className="font-semibold">Niveau {stats.level}</span>
             </div>
             <span className="text-sm text-muted-foreground">
-              {levelInfo.currentXp} / {levelInfo.xpForNextLevel} XP
+              {stats.xp} / {stats.xpForNext} XP
             </span>
           </div>
-          <Progress value={levelInfo.progress} className="h-3" />
+          <Progress value={stats.progress} className="h-3" />
         </CardContent>
       </Card>
 
@@ -73,24 +75,24 @@ export default async function ProfilePage() {
       <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon={<Flame className="h-5 w-5 text-neuron-500" fill="currentColor" />}
-          value={userStats?.currentStreak || 0}
+          value={stats.streak}
           label="Streak actuel"
-          subvalue={`Record: ${userStats?.longestStreak || 0}`}
+          subvalue={`Record: ${stats.longestStreak}`}
         />
         <StatCard
           icon={<Target className="h-5 w-5 text-green-500" />}
-          value={`${accuracy}%`}
+          value={`${stats.accuracy}%`}
           label="Précision"
-          subvalue={`${userStats?.totalCorrect || 0} / ${userStats?.totalAnswered || 0}`}
+          subvalue={`${stats.totalCorrect} / ${stats.totalAnswered}`}
         />
         <StatCard
           icon={<Trophy className="h-5 w-5 text-purple-500" />}
-          value={badgesCount}
+          value={stats.badges}
           label="Badges"
         />
         <StatCard
           icon={<Calendar className="h-5 w-5 text-blue-500" />}
-          value={projectsCount}
+          value={stats.projects}
           label="Projets"
         />
       </div>
@@ -112,17 +114,10 @@ export default async function ProfilePage() {
       </Card>
 
       {/* Déconnexion */}
-      <form
-        action={async () => {
-          'use server'
-          await signOut({ redirectTo: '/' })
-        }}
-      >
-        <Button variant="outline" className="w-full" type="submit">
-          <LogOut className="mr-2 h-4 w-4" />
-          Se déconnecter
-        </Button>
-      </form>
+      <Button variant="outline" className="w-full" onClick={handleSignOut}>
+        <LogOut className="mr-2 h-4 w-4" />
+        Se déconnecter
+      </Button>
 
       {/* Info compte */}
       <p className="text-center text-xs text-muted-foreground">

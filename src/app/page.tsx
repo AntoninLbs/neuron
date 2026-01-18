@@ -1,17 +1,41 @@
 // src/app/page.tsx
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { auth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { useAuth } from '@/components/auth-provider'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
-import { Brain, Flame, Target, Zap } from 'lucide-react'
+import { Brain, Flame, Target, Zap, Loader2 } from 'lucide-react'
 
-export default async function HomePage() {
-  const session = await auth()
-  
+export default function HomePage() {
+  const router = useRouter()
+  const { user, isLoading } = useAuth()
+
   // Si connecté, rediriger vers le dashboard
-  if (session?.user) {
-    redirect('/dashboard')
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push('/dashboard')
+    }
+  }, [user, isLoading, router])
+
+  // Afficher un loader pendant la vérification
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-neuron-500" />
+      </div>
+    )
+  }
+
+  // Si connecté, ne pas afficher la page (redirection en cours)
+  if (user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-neuron-500" />
+      </div>
+    )
   }
 
   return (
@@ -102,7 +126,7 @@ export default async function HomePage() {
             Prêt à booster ta culture générale ?
           </h2>
           <p className="mt-4 text-white/90">
-            Rejoins des milliers d'apprenants et commence ton parcours aujourd'hui.
+            Rejoins des milliers d&apos;apprenants et commence ton parcours aujourd&apos;hui.
           </p>
           <Link href="/auth/signin" className="mt-8 inline-block">
             <Button size="lg" variant="secondary" className="bg-white text-neuron-600 hover:bg-white/90">
