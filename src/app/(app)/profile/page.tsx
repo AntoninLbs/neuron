@@ -126,7 +126,7 @@ export default async function ProfilePage() {
 
       {/* Info compte */}
       <p className="text-center text-xs text-muted-foreground">
-        Membre depuis {formatDate(session.user.createdAt || new Date())}
+        Merci d&apos;utiliser Neuron !
       </p>
     </div>
   )
