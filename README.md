@@ -1,200 +1,133 @@
-# 🧠 Neuron
+# Neuron - Application d'apprentissage intelligent 🧠
 
-Application de culture générale avec répétition espacée. Apprends chaque jour, mémorise pour toujours.
+Application de révisions avec répétition espacée et génération de questions par IA.
 
-![Neuron Logo](./public/logo.svg)
+## Fonctionnalités
 
-## ✨ Fonctionnalités
+- ✅ Authentification (Email/Password + Google OAuth)
+- ✅ Création de projets avec catégories personnalisées
+- ✅ Génération de questions par IA (OpenAI)
+- ✅ Système de répétition espacée (algorithme SM-2)
+- ✅ Profil utilisateur modifiable
+- ✅ Mode sombre/clair
+- ✅ PWA (installable sur mobile)
 
-- **Répétition espacée** : Algorithme optimisé pour maximiser la mémorisation
-- **Projets personnalisés** : Combine les thèmes qui t'intéressent
-- **30+ thématiques** : Sciences, histoire, sport, cinéma, etc.
-- **Questions IA** : Génération automatique via OpenAI
-- **Gamification** : XP, niveaux, streak, badges
-- **Mode sombre/clair** : Interface adaptée à tes préférences
-- **Mobile-first** : Conçu pour les smartphones
+## Stack technique
 
-## 🛠️ Stack technique
+- **Framework**: Next.js 14
+- **Auth & Database**: Supabase
+- **IA**: OpenAI (GPT-4o-mini)
+- **UI**: Tailwind CSS + Radix UI
+- **Police**: Inter
 
-- **Framework** : Next.js 14 (App Router)
-- **Base de données** : PostgreSQL (Supabase)
-- **ORM** : Prisma
-- **Auth** : NextAuth.js v5 (Magic link + Google OAuth)
-- **Styling** : Tailwind CSS
-- **IA** : OpenAI GPT-4o-mini
-- **Déploiement** : Vercel
+## Installation
 
-## 🚀 Déploiement
-
-### 1. Créer un projet Supabase
-
-1. Va sur [supabase.com](https://supabase.com) et crée un compte
-2. Crée un nouveau projet
-3. Dans **Settings > Database > Connection string**, copie :
-   - **URI** (avec `?pgbouncer=true`) → `DATABASE_URL`
-   - **Direct** → `DIRECT_URL`
-
-### 2. Configurer les variables d'environnement
-
-Copie `.env.example` vers `.env` et remplis :
+### 1. Cloner et installer
 
 ```bash
-# Supabase
-DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:5432/postgres"
-
-# Auth
-AUTH_SECRET="$(openssl rand -base64 32)"  # Génère une clé aléatoire
-NEXTAUTH_URL="http://localhost:3000"
-
-# OpenAI
-OPENAI_API_KEY="sk-proj-..."
-
-# Google OAuth (optionnel)
-AUTH_GOOGLE_ID="..."
-AUTH_GOOGLE_SECRET="..."
-
-# Email (optionnel, pour magic link)
-RESEND_API_KEY="re_..."
-EMAIL_FROM="noreply@ton-domaine.com"
+git clone https://github.com/votre-repo/neuron.git
+cd neuron
+npm install
 ```
 
-### 3. Installation locale
+### 2. Configuration Supabase
+
+1. Créer un projet sur [supabase.com](https://supabase.com)
+2. Aller dans **SQL Editor** et exécuter le script `supabase-schema.sql`
+3. Copier les clés API depuis **Settings > API**
+
+### 3. Variables d'environnement
+
+Créer un fichier `.env.local` :
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
+OPENAI_API_KEY=sk-proj-xxx
+```
+
+### 4. Icônes PWA
+
+Pour que l'icône apparaisse correctement sur mobile, convertir le fichier `public/icon.svg` en PNG :
+
+**Option A - En ligne :**
+1. Aller sur [svgtopng.com](https://svgtopng.com) ou [cloudconvert.com](https://cloudconvert.com)
+2. Uploader `public/icon.svg`
+3. Créer 3 fichiers :
+   - `icon-192.png` (192x192)
+   - `icon-512.png` (512x512)
+   - `apple-touch-icon.png` (180x180)
+4. Placer dans le dossier `public/`
+
+**Option B - ImageMagick (local) :**
+```bash
+cd public
+convert icon.svg -resize 192x192 icon-192.png
+convert icon.svg -resize 512x512 icon-512.png
+convert icon.svg -resize 180x180 apple-touch-icon.png
+```
+
+### 5. Lancer en développement
 
 ```bash
-# Cloner le repo
-git clone https://github.com/ton-username/neuron.git
-cd neuron
-
-# Installer les dépendances
-npm install
-
-# Générer le client Prisma
-npm run db:generate
-
-# Pousser le schéma vers Supabase
-npm run db:push
-
-# Seeder la base (thèmes + questions)
-npm run db:seed
-
-# Lancer en dev
 npm run dev
 ```
 
-### 4. Déployer sur Vercel
+Ouvrir [http://localhost:3000](http://localhost:3000)
 
-1. Push ton code sur GitHub
-2. Va sur [vercel.com](https://vercel.com) et importe le repo
-3. Ajoute les variables d'environnement (même que `.env`)
-4. Change `NEXTAUTH_URL` vers ton URL Vercel (ex: `https://neuron.vercel.app`)
-5. Déploie !
+## Configuration Supabase
 
-### 5. Configurer Google OAuth (optionnel)
+### Authentication
 
-1. Va sur [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Crée un projet
-3. Configure l'écran de consentement OAuth
-4. Crée des identifiants OAuth 2.0
-5. Ajoute les URLs de redirection :
-   - `http://localhost:3000/api/auth/callback/google` (dev)
-   - `https://ton-app.vercel.app/api/auth/callback/google` (prod)
-6. Copie Client ID et Secret dans tes variables d'env
+1. **Settings > Authentication > URL Configuration**
+   - Site URL: `https://votre-app.vercel.app`
+   - Redirect URLs: ajouter `https://votre-app.vercel.app`, `http://localhost:3000`
 
-## 📁 Structure du projet
+2. **Google OAuth** (optionnel)
+   - Aller dans **Providers > Google**
+   - Activer et ajouter Client ID + Secret depuis Google Cloud Console
+
+### Base de données
+
+Exécuter le script SQL fourni (`supabase-schema.sql`) qui crée :
+- Table `profiles` : Profils utilisateurs
+- Table `projects` : Projets d'apprentissage
+- Table `cards` : Questions/cartes de révision
+- Table `user_stats` : Statistiques utilisateur
+- Policies RLS pour la sécurité
+- Triggers pour la création automatique des profils
+
+## Déploiement Vercel
+
+1. Push sur GitHub
+2. Connecter le repo à Vercel
+3. Ajouter les variables d'environnement :
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `OPENAI_API_KEY`
+4. Déployer !
+
+## Structure du projet
 
 ```
-neuron/
-├── prisma/
-│   ├── schema.prisma    # Schéma de la base de données
-│   └── seed.ts          # Données initiales (thèmes, questions)
-├── src/
-│   ├── app/
-│   │   ├── (app)/       # Pages authentifiées
-│   │   │   ├── dashboard/
-│   │   │   ├── learn/
-│   │   │   ├── stats/
-│   │   │   ├── profile/
-│   │   │   └── projects/
-│   │   ├── auth/        # Pages d'authentification
-│   │   └── api/         # Routes API
-│   ├── components/
-│   │   ├── ui/          # Composants réutilisables
-│   │   └── nav/         # Navigation
-│   ├── lib/
-│   │   ├── auth.ts      # Configuration NextAuth
-│   │   ├── prisma.ts    # Client Prisma
-│   │   ├── openai.ts    # Client OpenAI
-│   │   ├── spaced-repetition.ts  # Algorithme SR
-│   │   └── utils.ts     # Utilitaires
-│   ├── hooks/           # React hooks
-│   └── types/           # Types TypeScript
-├── public/              # Assets statiques
-└── ...config files
+src/
+├── app/
+│   ├── (app)/           # Pages protégées (auth requise)
+│   │   ├── dashboard/   # Liste des projets
+│   │   ├── learn/       # Page d'apprentissage
+│   │   ├── profile/     # Profil utilisateur
+│   │   └── projects/    # Création de projet
+│   ├── api/             # Routes API
+│   └── auth/            # Pages d'authentification
+├── components/          # Composants réutilisables
+├── lib/                 # Utilitaires
+└── types/               # Types TypeScript
 ```
 
-## 🎯 Algorithme de répétition espacée
+## Catégories disponibles
 
-Intervalles (en jours) après chaque bonne réponse :
+Marketing, Mathématiques, Histoire, Géographie, Sciences, Économie, Informatique, Langues, Philosophie, Droit, Physique, Chimie, Biologie, Littérature, Musique, Cinéma, Sport, Cuisine, Psychologie, Management
 
-| Étape | Intervalle | Jour cumulé |
-|-------|------------|-------------|
-| 1     | +1 jour    | J1          |
-| 2     | +1 jour    | J2          |
-| 3     | +3 jours   | J5          |
-| 4     | +5 jours   | J10         |
-| 5     | +8 jours   | J18         |
-| 6     | +13 jours  | J31         |
-| 7     | +21 jours  | J52         |
-| 8+    | +34 jours  | cap         |
-
-**Mauvaise réponse** → Retour à J+1
-
-## 🏅 Système de gamification
-
-### XP
-- Bonne réponse : **+10 XP**
-- Mauvaise réponse : **+2 XP**
-- Bonus révision : **+5 XP**
-- Objectif quotidien : **+50 XP**
-- Bonus streak : **+25 XP**
-
-### Niveaux
-- Niveau N nécessite N × 100 XP
-- Niveau 1 : 0-100 XP
-- Niveau 2 : 100-300 XP
-- Niveau 3 : 300-600 XP
-- etc.
-
-## 🔧 Commandes utiles
-
-```bash
-# Dev
-npm run dev          # Lancer en développement
-npm run build        # Build production
-npm run start        # Lancer en production
-
-# Base de données
-npm run db:push      # Appliquer le schéma
-npm run db:generate  # Générer le client Prisma
-npm run db:seed      # Peupler avec les données initiales
-npm run db:studio    # Interface visuelle Prisma
-```
-
-## 📝 TODO / Améliorations futures
-
-- [ ] API de génération de questions IA
-- [ ] Système de badges complet
-- [ ] Mode offline (PWA)
-- [ ] Notifications push
-- [ ] Classement entre amis
-- [ ] Import/export de projets
-- [ ] Plus de thématiques
-
-## 📄 Licence
+## Licence
 
 MIT
-
----
-
-Fait avec ❤️ et ☕

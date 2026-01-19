@@ -7,17 +7,25 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Neuron - Connecte tes connaissances',
+    default: 'Neuron - Apprends intelligemment',
     template: '%s | Neuron',
   },
-  description: 'Application de culture générale avec répétition espacée. Apprends chaque jour, mémorise pour toujours.',
-  keywords: ['culture générale', 'quiz', 'apprentissage', 'mémorisation', 'spaced repetition'],
+  description: 'Application d\'apprentissage avec répétition espacée. Crée tes projets, génère des questions, et mémorise efficacement.',
+  keywords: ['apprentissage', 'quiz', 'répétition espacée', 'éducation', 'révisions'],
   authors: [{ name: 'Neuron' }],
   creator: 'Neuron',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
     apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Neuron',
   },
 }
 
@@ -39,6 +47,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        {/* Police Inter via CDN */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className="font-sans antialiased">
         <AuthProvider>
           <ThemeProvider
