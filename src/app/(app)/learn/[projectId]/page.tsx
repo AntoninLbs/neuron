@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth-provider'
 import { OctopusMascot } from '@/components/mascot/octopus'
+import { MascotWithBubble } from '@/components/mascot/mascot-bubble'
 import { 
   PRESET_CATEGORIES, 
   calculateAdaptation,
@@ -57,6 +58,7 @@ export default function LearnProjectPage() {
   // Data
   const [project, setProject] = useState<Project | null>(null)
   const [sessionCards, setSessionCards] = useState<CardType[]>([])
+  const [profile, setProfile] = useState<{ mascot_color: string; mascot_accessory: string | null } | null>(null)
   
   // Session
   const [phase, setPhase] = useState<Phase>('loading')
@@ -88,6 +90,15 @@ export default function LearnProjectPage() {
       if (!user || !projectId) return
 
       try {
+        // Charger le profil pour la mascotte
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('mascot_color, mascot_accessory')
+          .eq('id', user.id)
+          .single()
+
+        if (profileData) setProfile(profileData)
+
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select('*')
@@ -447,15 +458,18 @@ export default function LearnProjectPage() {
 
         <Progress value={((currentIndex + 1) / sessionCards.length) * 100} className="mb-4 h-2" />
 
-        {/* Mascotte */}
-        <div className="flex justify-center mb-4">
-          <OctopusMascot 
-            mood={mascotMood} 
-            message={mascotMessage}
-            size="md"
-            showMessage={!!mascotMessage}
-          />
-        </div>
+        {/* Mascotte avec bulle */}
+        {mascotMessage && (
+          <div className="mb-4">
+            <MascotWithBubble 
+              message={mascotMessage}
+              mood={mascotMood}
+              color={profile?.mascot_color || '#f97316'}
+              accessory={profile?.mascot_accessory}
+              size="sm"
+            />
+          </div>
+        )}
 
         {/* Catégorie */}
         {currentCard && (

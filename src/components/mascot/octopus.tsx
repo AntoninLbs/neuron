@@ -10,16 +10,21 @@ interface OctopusMascotProps {
   message?: string
   color?: string
   accessory?: string | null
+  accessoryIcon?: string | null
   size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
   showMessage?: boolean
 }
+
+// Accessoires avec SVG
+const SVG_ACCESSORIES = ['glasses', 'hat', 'crown', 'headphones', 'bowtie', 'cap', 'party', 'wizard', 'santa']
 
 export function OctopusMascot({
   mood = 'idle',
   message,
   color = '#f97316',
   accessory = null,
+  accessoryIcon = null,
   size = 'md',
   className,
   showMessage = true,
@@ -254,6 +259,44 @@ export function OctopusMascot({
               <path d="M70 65 L78 60 L78 70 Z" fill="#ef4444" />
               <circle cx="60" cy="65" r="4" fill="#ef4444" />
             </g>
+          )}
+
+          {accessory === 'cap' && (
+            <g>
+              <ellipse cx="60" cy="20" rx="28" ry="10" fill="#3b82f6" />
+              <rect x="32" y="15" width="56" height="10" fill="#3b82f6" rx="3" />
+              <rect x="28" y="20" width="20" height="6" fill="#1e40af" rx="2" />
+            </g>
+          )}
+
+          {accessory === 'party' && (
+            <g>
+              <path d="M60 0 L45 25 L75 25 Z" fill="#ec4899" />
+              <circle cx="60" cy="2" r="5" fill="#eab308" />
+              <line x1="50" y1="10" x2="55" y2="20" stroke="#22c55e" strokeWidth="2" />
+              <line x1="70" y1="10" x2="65" y2="20" stroke="#3b82f6" strokeWidth="2" />
+            </g>
+          )}
+
+          {accessory === 'wizard' && (
+            <g>
+              <path d="M60 -5 L40 30 L80 30 Z" fill="#6366f1" />
+              <circle cx="60" cy="0" r="4" fill="#eab308" />
+              <text x="52" y="20" fontSize="10">✨</text>
+            </g>
+          )}
+
+          {accessory === 'santa' && (
+            <g>
+              <path d="M35 25 Q60 -5 85 25" fill="#ef4444" />
+              <ellipse cx="60" cy="25" rx="30" ry="8" fill="white" />
+              <circle cx="85" cy="15" r="8" fill="white" />
+            </g>
+          )}
+
+          {/* Fallback: emoji pour accessoires sans SVG */}
+          {accessory && !SVG_ACCESSORIES.includes(accessory) && accessoryIcon && (
+            <text x="60" y="0" fontSize="20" textAnchor="middle">{accessoryIcon}</text>
           )}
 
           {/* Étoiles si celebrating */}

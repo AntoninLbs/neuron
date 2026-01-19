@@ -481,55 +481,37 @@ export const SHOP_PRICES = {
 }
 
 // ============================================
-// BOUTIQUE DU JOUR (avec wishlist)
+// BOUTIQUE DU JOUR (rotation aléatoire pure)
 // ============================================
 
-export function getDailyShop(
-  date: Date = new Date(),
-  wishlistColors: string[] = [],
-  wishlistAccessories: string[] = []
-): {
+export function getDailyShop(date: Date = new Date()): {
   colors: ShopColor[]
   accessories: ShopAccessory[]
 } {
   const dateString = date.toISOString().split('T')[0]
   const seed = dateString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
   
-  // Générateur pseudo-aléatoire
+  // Générateur pseudo-aléatoire basé sur la date
   const random = (max: number, offset: number = 0) => {
     const x = Math.sin(seed + offset) * 10000
     return Math.floor((x - Math.floor(x)) * max)
   }
   
-  // Couleurs wishlistées en priorité
-  const wishedColors = ALL_COLORS.filter(c => wishlistColors.includes(c.id))
-  
-  // Compléter avec des couleurs aléatoires pour avoir 6 au total
-  const remainingColorSlots = 6 - wishedColors.length
-  const otherColors = ALL_COLORS.filter(c => !wishlistColors.includes(c.id))
-  const randomColorIndices = new Set<number>()
+  // Sélectionner 6 couleurs aléatoires
+  const colorIndices = new Set<number>()
   let i = 0
-  while (randomColorIndices.size < remainingColorSlots && randomColorIndices.size < otherColors.length) {
-    randomColorIndices.add(random(otherColors.length, i++))
+  while (colorIndices.size < 6) {
+    colorIndices.add(random(ALL_COLORS.length, i++))
   }
-  const randomColors = Array.from(randomColorIndices).map(idx => otherColors[idx])
+  const colors = Array.from(colorIndices).map(idx => ALL_COLORS[idx])
   
-  const colors = [...wishedColors, ...randomColors].slice(0, 6)
-  
-  // Accessoires wishlistés en priorité
-  const wishedAccessories = ALL_ACCESSORIES.filter(a => wishlistAccessories.includes(a.id))
-  
-  // Compléter avec des accessoires aléatoires pour avoir 4 au total
-  const remainingAccSlots = 4 - wishedAccessories.length
-  const otherAccessories = ALL_ACCESSORIES.filter(a => !wishlistAccessories.includes(a.id))
-  const randomAccIndices = new Set<number>()
+  // Sélectionner 4 accessoires aléatoires
+  const accIndices = new Set<number>()
   i = 100
-  while (randomAccIndices.size < remainingAccSlots && randomAccIndices.size < otherAccessories.length) {
-    randomAccIndices.add(random(otherAccessories.length, i++))
+  while (accIndices.size < 4) {
+    accIndices.add(random(ALL_ACCESSORIES.length, i++))
   }
-  const randomAccessories = Array.from(randomAccIndices).map(idx => otherAccessories[idx])
-  
-  const accessories = [...wishedAccessories, ...randomAccessories].slice(0, 4)
+  const accessories = Array.from(accIndices).map(idx => ALL_ACCESSORIES[idx])
   
   return { colors, accessories }
 }

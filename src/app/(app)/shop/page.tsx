@@ -45,12 +45,8 @@ export default function ShopPage() {
   const [showCatalog, setShowCatalog] = useState<'colors' | 'accessories' | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Boutique du jour avec wishlist
-  const dailyShop = getDailyShop(
-    new Date(),
-    profile?.wishlist_colors || [],
-    profile?.wishlist_accessories || []
-  )
+  // Boutique du jour (rotation aléatoire)
+  const dailyShop = getDailyShop()
 
   useEffect(() => {
     async function loadProfile() {
@@ -276,7 +272,7 @@ export default function ShopPage() {
           </div>
 
           <div className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
-            <Heart className="h-3 w-3 fill-red-500 text-red-500" /> = apparaîtra demain en priorité
+            <Heart className="h-3 w-3 fill-red-500 text-red-500" /> = favoris (visible dans ton profil)
           </div>
 
           <div className={cn(
@@ -428,6 +424,7 @@ export default function ShopPage() {
             mood="happy"
             color={previewColor || profile?.mascot_color || '#f97316'}
             accessory={previewAccessory}
+            accessoryIcon={previewAccessory ? ALL_ACCESSORIES.find(a => a.value === previewAccessory)?.icon : null}
             size="md"
           />
         </div>

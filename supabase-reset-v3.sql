@@ -3,23 +3,20 @@
 -- Système de jeu avec carte du monde, gems, mascotte
 -- ============================================
 
--- 1. SUPPRIMER TOUT (avec CASCADE pour forcer)
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
-DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
-DROP TRIGGER IF EXISTS update_user_stats_updated_at ON user_stats;
-
--- Supprimer les fonctions avec CASCADE
-DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
-DROP FUNCTION IF EXISTS update_updated_at() CASCADE;
-
--- Supprimer TOUTES les tables (anciennes et nouvelles)
+-- 1. SUPPRIMER TOUT (tables d'abord, CASCADE supprime les triggers)
 DROP TABLE IF EXISTS cards CASCADE;
 DROP TABLE IF EXISTS world_levels CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS user_purchases CASCADE;
 DROP TABLE IF EXISTS user_stats CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
+
+-- Supprimer les fonctions
+DROP FUNCTION IF EXISTS handle_new_user() CASCADE;
+DROP FUNCTION IF EXISTS update_updated_at() CASCADE;
+
+-- Supprimer le trigger sur auth.users (table système, existe toujours)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
 -- ============================================
 -- 2. TABLES
