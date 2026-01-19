@@ -1,18 +1,40 @@
 // src/app/api/generate-questions/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import type { Difficulty, AnswerMode, GeneratedQuestion } from '@/types'
+import type { SchoolLevel, AnswerMode } from '@/types'
 
-const DIFFICULTY_PROMPTS: Record<Difficulty, string> = {
-  BEGINNER: 'niveau débutant (concepts de base, faits simples, vocabulaire courant)',
-  INTERMEDIATE: 'niveau intermédiaire (nécessite des connaissances plus approfondies)',
-  EXPERT: 'niveau expert (questions pointues, détails précis, subtilités)',
+const SCHOOL_LEVEL_PROMPTS: Record<SchoolLevel, string> = {
+  college: 'niveau collège (6ème-3ème), vocabulaire simple et accessible, concepts de base',
+  lycee: 'niveau lycée (2nde-1ère), concepts intermédiaires, vocabulaire courant',
+  terminale: 'niveau terminale/bac, approfondissement, questions de révision',
+  superieur: 'niveau études supérieures (licence/master), concepts avancés, précision technique',
+  expert: 'niveau expert/doctorat, questions pointues, détails précis, nuances',
+}
+
+const DIFFICULTY_PROMPTS: Record<number, string> = {
+  1: 'très facile, questions basiques',
+  2: 'facile, concepts simples',
+  3: 'facile+, légèrement plus poussé',
+  4: 'moyen-facile',
+  5: 'moyen, niveau standard',
+  6: 'moyen+, un peu plus difficile',
+  7: 'difficile-, nécessite de bonnes connaissances',
+  8: 'difficile, questions approfondies',
+  9: 'très difficile, questions pointues',
+  10: 'expert, questions de spécialiste',
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { categories, difficulty, answerMode = 'qcm', count = 10 } = await request.json() as {
+    const { 
+      categories, 
+      schoolLevel = 'lycee',
+      difficulty = 5, 
+      answerMode = 'qcm', 
+      count = 10 
+    } = await request.json() as {
       categories: string[]
-      difficulty: Difficulty
+      schoolLevel?: SchoolLevel
+      difficulty?: number
       answerMode?: AnswerMode
       count?: number
     }
@@ -25,13 +47,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OpenAI API key non configurée' }, { status: 500 })
     }
 
-    // Import dynamique pour éviter l'erreur au build
     const OpenAI = (await import('openai')).default
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-    const questions: GeneratedQuestion[] = []
+    const questions: any[] = []
     const questionsPerCategory = Math.ceil(count / categories.length)
 
     for (const category of categories) {
@@ -39,8 +58,8 @@ export async function POST(request: NextRequest) {
       if (numQuestions <= 0) break
 
       const prompt = answerMode === 'qcm' 
-        ? generateQCMPrompt(category, difficulty, numQuestions)
-        : generateDirectPrompt(category, difficulty, numQuestions)
+        ? generateQCMPrompt(category, schoolLevel, difficulty, numQuestions)
+        : generateDirectPrompt(category, schoolLevel, difficulty, numQuestions)
 
       try {
         const response = await openai.chat.completions.create({
@@ -48,12 +67,9 @@ export async function POST(request: NextRequest) {
           messages: [
             {
               role: 'system',
-              content: 'Tu es un générateur de questions éducatives en français. Tu génères uniquement du JSON valide, sans texte supplémentaire.',
+              content: 'Tu es un professeur qui crée des questions éducatives en français. Tu génères uniquement du JSON valide.',
             },
-            {
-              role: 'user',
-              content: prompt,
-            },
+            { role: 'user', content: prompt },
           ],
           temperature: 0.8,
           max_tokens: 3000,
@@ -63,21 +79,11 @@ export async function POST(request: NextRequest) {
         const content = response.choices[0]?.message?.content
         if (!content) continue
 
-        const parsed = JSON.parse(content) as {
-          questions: Array<{
-            question: string
-            answer: string
-            choices?: string[]
-            correctIndex?: number
-            explanation: string
-          }>
-        }
+        const parsed = JSON.parse(content)
 
-        for (const q of parsed.questions) {
-          // Validation de base
+        for (const q of parsed.questions || []) {
           if (!q.question || !q.answer) continue
 
-          // Validation QCM spécifique
           if (answerMode === 'qcm') {
             if (!Array.isArray(q.choices) || q.choices.length !== 4) continue
             if (typeof q.correctIndex !== 'number' || q.correctIndex < 0 || q.correctIndex > 3) continue
@@ -93,7 +99,6 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        // Petit délai pour éviter le rate limiting
         await new Promise(resolve => setTimeout(resolve, 300))
       } catch (error) {
         console.error(`Erreur génération pour ${category}:`, error)
@@ -107,56 +112,65 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateQCMPrompt(category: string, difficulty: Difficulty, count: number): string {
-  return `Génère ${count} question(s) QCM sur le thème "${category}" de ${DIFFICULTY_PROMPTS[difficulty]}.
+function generateQCMPrompt(category: string, schoolLevel: SchoolLevel, difficulty: number, count: number): string {
+  const levelDesc = SCHOOL_LEVEL_PROMPTS[schoolLevel]
+  const diffDesc = DIFFICULTY_PROMPTS[Math.min(Math.max(difficulty, 1), 10)]
 
-RÈGLES STRICTES :
-1. Chaque question doit avoir UNE SEULE bonne réponse, sans ambiguïté
-2. Exactement 4 choix de réponse plausibles mais distincts
-3. L'explication doit être concise (2-3 phrases max) et éducative
-4. Questions variées et intéressantes
+  return `Génère ${count} question(s) QCM sur "${category}".
+
+NIVEAU : ${levelDesc}
+DIFFICULTÉ : ${diffDesc}
+
+RÈGLES :
+1. Exactement 4 choix de réponse plausibles
+2. UNE SEULE bonne réponse, sans ambiguïté
+3. Explication courte et pédagogique (2-3 phrases)
+4. Questions adaptées au niveau indiqué
 5. Pas de questions d'actualité après 2024
-6. Vocabulaire accessible
 
 Réponds UNIQUEMENT avec ce JSON :
 {
   "questions": [
     {
-      "question": "La question complète ?",
-      "answer": "La bonne réponse en texte",
+      "question": "La question ?",
+      "answer": "La bonne réponse",
       "choices": ["Choix A", "Choix B", "Choix C", "Choix D"],
       "correctIndex": 0,
-      "explanation": "Explication courte de la bonne réponse."
+      "explanation": "Explication pédagogique."
     }
   ]
 }
 
-IMPORTANT : "correctIndex" correspond à l'index (0-3) de la bonne réponse dans "choices". "answer" doit être identique au choix correct.`
+IMPORTANT : "correctIndex" = index (0-3) de la bonne réponse dans "choices". "answer" = texte du choix correct.`
 }
 
-function generateDirectPrompt(category: string, difficulty: Difficulty, count: number): string {
-  return `Génère ${count} question(s) à réponse directe sur le thème "${category}" de ${DIFFICULTY_PROMPTS[difficulty]}.
+function generateDirectPrompt(category: string, schoolLevel: SchoolLevel, difficulty: number, count: number): string {
+  const levelDesc = SCHOOL_LEVEL_PROMPTS[schoolLevel]
+  const diffDesc = DIFFICULTY_PROMPTS[Math.min(Math.max(difficulty, 1), 10)]
 
-RÈGLES STRICTES :
-1. La réponse doit être COURTE (1 à 5 mots maximum)
-2. Une seule réponse possible, sans ambiguïté
+  return `Génère ${count} question(s) à réponse directe sur "${category}".
+
+NIVEAU : ${levelDesc}
+DIFFICULTÉ : ${diffDesc}
+
+RÈGLES :
+1. Réponse COURTE (1 à 5 mots max)
+2. Une seule réponse possible
 3. Question claire et précise
-4. L'explication doit être concise (2-3 phrases max)
+4. Explication courte et pédagogique
 5. Pas de questions d'actualité après 2024
-6. Évite les réponses numériques complexes
 
-Exemples de bonnes questions :
+Exemples :
 - "Quelle est la capitale de la France ?" → "Paris"
 - "Qui a peint La Joconde ?" → "Léonard de Vinci"
-- "Quel est le symbole chimique de l'or ?" → "Au"
 
 Réponds UNIQUEMENT avec ce JSON :
 {
   "questions": [
     {
-      "question": "La question complète ?",
+      "question": "La question ?",
       "answer": "Réponse courte",
-      "explanation": "Explication courte et éducative."
+      "explanation": "Explication pédagogique."
     }
   ]
 }`
