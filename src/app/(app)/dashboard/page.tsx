@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, BookOpen, Trash2, MoreVertical, Loader2 } from 'lucide-react'
+import { Plus, BookOpen, Trash2, Loader2, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/components/auth-provider'
 import { supabase } from '@/lib/supabase'
-import { CATEGORIES, type Project, type CategoryKey } from '@/types'
+import { PRESET_CATEGORIES, type Project, type PresetCategoryKey } from '@/types'
 import { cn } from '@/lib/utils'
 
 export default function DashboardPage() {
@@ -16,8 +16,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [displayName, setDisplayName] = useState<string | null>(null)
-  const [cardsCount, setCardsCount] = useState<Record<string, number>>({})
-  const [dueCount, setDueCount] = useState<Record<string, number>>({})
+  const [projectStats, setProjectStats] = useState<Record<string, { total: number; due: number }>>({})
 
   // Charger le profil et les projets
   useEffect(() => {
@@ -46,10 +45,9 @@ export default function DashboardPage() {
         if (error) throw error
         setProjects(projectsData || [])
 
-        // Charger le nombre de cartes par projet
+        // Charger les stats par projet
         if (projectsData && projectsData.length > 0) {
-          const counts: Record<string, number> = {}
-          const dues: Record<string, number> = {}
+          const stats: Record<string, { total: number; due: number }> = {}
           
           for (const project of projectsData) {
             // Total des cartes
@@ -57,21 +55,21 @@ export default function DashboardPage() {
               .from('cards')
               .select('*', { count: 'exact', head: true })
               .eq('project_id', project.id)
-            
-            counts[project.id] = totalCount || 0
 
             // Cartes à réviser
-            const { count: dueCountVal } = await supabase
+            const { count: dueCount } = await supabase
               .from('cards')
               .select('*', { count: 'exact', head: true })
               .eq('project_id', project.id)
               .lte('next_review', new Date().toISOString())
 
-            dues[project.id] = dueCountVal || 0
+            stats[project.id] = {
+              total: totalCount || 0,
+              due: dueCount || 0,
+            }
           }
 
-          setCardsCount(counts)
-          setDueCount(dues)
+          setProjectStats(stats)
         }
       } catch (error) {
         console.error('Erreur chargement:', error)
@@ -99,6 +97,14 @@ export default function DashboardPage() {
     if (hour < 12) return 'Bonjour'
     if (hour < 18) return 'Bon après-midi'
     return 'Bonsoir'
+  }
+
+  const getCategoryDisplay = (cat: string) => {
+    const preset = PRESET_CATEGORIES[cat as PresetCategoryKey]
+    return {
+      icon: preset?.icon || '📌',
+      name: preset?.name || cat,
+    }
   }
 
   const userName = displayName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'toi'
@@ -134,7 +140,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="font-semibold">Nouveau projet</p>
-                <p className="text-sm text-muted-foreground">Crée un projet avec tes thèmes</p>
+                <p className="text-sm text-muted-foreground">Choisis tes thèmes et commence à apprendre</p>
               </div>
             </CardContent>
           </Card>
@@ -146,9 +152,8 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold">Mes projets</h2>
             
             {projects.map((project) => {
-              const totalCards = cardsCount[project.id] || 0
-              const dueCards = dueCount[project.id] || 0
-              const categories = project.categories as CategoryKey[]
+              const stats = projectStats[project.id] || { total: 0, due: 0 }
+              const categories = project.categories as string[]
 
               return (
                 <Card key={project.id} className="overflow-hidden">
@@ -156,18 +161,32 @@ export default function DashboardPage() {
                     <Link href={`/learn/${project.id}`}>
                       <div className="p-4 hover:bg-muted/50 transition-colors">
                         <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="font-semibold">{project.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {totalCards} carte{totalCards > 1 ? 's' : ''} • {dueCards} à réviser
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold truncate">{project.name}</h3>
+                              <span className={cn(
+                                'px-2 py-0.5 rounded-full text-xs',
+                                project.answer_mode === 'qcm' 
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                  : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                              )}>
+                                {project.answer_mode === 'qcm' ? 'QCM' : 'Direct'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {stats.total} carte{stats.total > 1 ? 's' : ''} 
+                              {stats.due > 0 && (
+                                <span className="text-orange-500 font-medium"> • {stats.due} à réviser</span>
+                              )}
                             </p>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                            className="h-8 w-8 text-muted-foreground hover:text-red-500 flex-shrink-0"
                             onClick={(e) => {
                               e.preventDefault()
+                              e.stopPropagation()
                               deleteProject(project.id)
                             }}
                           >
@@ -177,15 +196,18 @@ export default function DashboardPage() {
 
                         {/* Catégories */}
                         <div className="flex flex-wrap gap-2 mb-3">
-                          {categories.slice(0, 4).map((cat) => (
-                            <span
-                              key={cat}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs"
-                            >
-                              <span>{CATEGORIES[cat]?.icon}</span>
-                              <span>{CATEGORIES[cat]?.name}</span>
-                            </span>
-                          ))}
+                          {categories.slice(0, 4).map((cat) => {
+                            const { icon, name } = getCategoryDisplay(cat)
+                            return (
+                              <span
+                                key={cat}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs"
+                              >
+                                <span>{icon}</span>
+                                <span className="truncate max-w-[80px]">{name}</span>
+                              </span>
+                            )
+                          })}
                           {categories.length > 4 && (
                             <span className="px-2 py-1 rounded-full bg-muted text-xs text-muted-foreground">
                               +{categories.length - 4}
@@ -194,14 +216,19 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Bouton réviser */}
-                        {dueCards > 0 && (
+                        {stats.due > 0 ? (
                           <Button
                             size="sm"
                             className="bg-orange-500 hover:bg-orange-600"
                           >
                             <BookOpen className="h-4 w-4 mr-2" />
-                            Réviser ({dueCards})
+                            Réviser ({stats.due})
                           </Button>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>À jour ! Reviens demain</span>
+                          </div>
                         )}
                       </div>
                     </Link>
