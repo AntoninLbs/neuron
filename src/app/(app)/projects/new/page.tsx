@@ -200,25 +200,23 @@ export default function NewProjectPage() {
       case 'name':
         return (
           <div className="space-y-6">
-            <div className="text-center">
+            <div className="flex items-center gap-4">
               <OctopusMascot 
                 mood="happy" 
                 message={mascotMessage}
-                size="lg"
-                className="mx-auto mb-4"
+                size="sm"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Comment s'appelle ton projet ?</Label>
-              <Input
-                id="name"
-                placeholder="Ex: Révisions Bac, Marketing Digital..."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="text-lg"
-                autoFocus
-              />
+              <div className="flex-1">
+                <Label htmlFor="name">Comment s'appelle ton projet ?</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Révisions Bac, Marketing..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-2"
+                  autoFocus
+                />
+              </div>
             </div>
 
             <Button
@@ -237,48 +235,41 @@ export default function NewProjectPage() {
 
       case 'school':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <OctopusMascot 
-                mood="thinking" 
-                message="Tu es à quel niveau ?"
-                size="md"
-                className="mx-auto mb-4"
-              />
-            </div>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Quel est ton niveau ?</p>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {(Object.entries(SCHOOL_LEVELS) as [SchoolLevel, typeof SCHOOL_LEVELS[SchoolLevel]][]).map(([key, level]) => (
                 <button
                   key={key}
                   onClick={() => setSchoolLevel(key)}
                   className={cn(
-                    'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left',
+                    'w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left',
                     schoolLevel === key
                       ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
                       : 'border-border hover:border-orange-300'
                   )}
                 >
-                  <span className="text-2xl">{level.icon}</span>
-                  <div>
-                    <p className="font-semibold">{level.name}</p>
-                    <p className="text-sm text-muted-foreground">{level.description}</p>
+                  <span className="text-xl">{level.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{level.name}</p>
+                    <p className="text-xs text-muted-foreground">{level.description}</p>
                   </div>
                   {schoolLevel === key && (
-                    <Check className="ml-auto h-5 w-5 text-orange-500" />
+                    <Check className="h-4 w-4 text-orange-500" />
                   )}
                 </button>
               ))}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setStep('name')} className="flex-1">
                 Retour
               </Button>
               <Button
                 onClick={() => {
                   setStep('mode')
-                  setMascotMessage("Parfait ! Et le mode de réponse ? 🤔")
+                  setMascotMessage("Et le mode de réponse ? 🤔")
                 }}
                 className="flex-1 bg-orange-500 hover:bg-orange-600"
               >
@@ -290,54 +281,47 @@ export default function NewProjectPage() {
 
       case 'mode':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <OctopusMascot 
-                mood="thinking" 
-                message={mascotMessage}
-                size="md"
-                className="mx-auto mb-4"
-              />
-            </div>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Comment veux-tu répondre ?</p>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setAnswerMode('qcm')}
                 className={cn(
-                  'p-6 rounded-xl border-2 transition-all text-center',
+                  'p-4 rounded-xl border-2 transition-all text-center',
                   answerMode === 'qcm'
                     ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
                     : 'border-border hover:border-orange-300'
                 )}
               >
-                <span className="text-4xl block mb-2">📝</span>
-                <p className="font-semibold">QCM</p>
-                <p className="text-xs text-muted-foreground mt-1">4 choix de réponse</p>
+                <span className="text-3xl block mb-2">📝</span>
+                <p className="font-medium text-sm">QCM</p>
+                <p className="text-xs text-muted-foreground">4 choix</p>
               </button>
 
               <button
                 onClick={() => setAnswerMode('direct')}
                 className={cn(
-                  'p-6 rounded-xl border-2 transition-all text-center',
+                  'p-4 rounded-xl border-2 transition-all text-center',
                   answerMode === 'direct'
                     ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
                     : 'border-border hover:border-orange-300'
                 )}
               >
-                <span className="text-4xl block mb-2">✍️</span>
-                <p className="font-semibold">Réponse libre</p>
-                <p className="text-xs text-muted-foreground mt-1">Sans aide</p>
+                <span className="text-3xl block mb-2">✍️</span>
+                <p className="font-medium text-sm">Direct</p>
+                <p className="text-xs text-muted-foreground">Sans aide</p>
               </button>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setStep('school')} className="flex-1">
                 Retour
               </Button>
               <Button
                 onClick={() => {
                   setStep('categories')
-                  setMascotMessage("Maintenant, choisis tes thèmes ! 📚")
+                  setMascotMessage("Choisis tes thèmes ! 📚")
                 }}
                 className="flex-1 bg-orange-500 hover:bg-orange-600"
               >
@@ -349,14 +333,8 @@ export default function NewProjectPage() {
 
       case 'categories':
         return (
-          <div className="space-y-6 pb-24">
+          <div className="space-y-4 pb-48">
             <div className="text-center">
-              <OctopusMascot 
-                mood="excited" 
-                message={mascotMessage}
-                size="md"
-                className="mx-auto mb-2"
-              />
               <p className="text-sm text-muted-foreground">
                 {selectedCategories.length} thème{selectedCategories.length > 1 ? 's' : ''} sélectionné{selectedCategories.length > 1 ? 's' : ''}
               </p>
@@ -445,9 +423,9 @@ export default function NewProjectPage() {
               </div>
             </div>
 
-            {/* Actions fixes */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
-              <div className="container max-w-2xl flex gap-3">
+            {/* Actions fixes - au dessus de la nav */}
+            <div className="fixed bottom-24 md:bottom-0 left-0 right-0 p-4 bg-background border-t z-50">
+              <div className="container max-w-lg flex gap-3">
                 <Button variant="outline" onClick={() => setStep('mode')} className="flex-1">
                   Retour
                 </Button>
@@ -466,24 +444,21 @@ export default function NewProjectPage() {
 
       case 'generating':
         return (
-          <div className="text-center space-y-6 py-12">
+          <div className="text-center space-y-6 py-8">
             <OctopusMascot 
               mood="excited" 
               message={mascotMessage}
-              size="xl"
+              size="lg"
               className="mx-auto"
             />
             <div>
-              <h2 className="text-xl font-bold mb-2">Création en cours...</h2>
-              <p className="text-muted-foreground text-sm">
-                {progress < 30 && "Création du projet..."}
-                {progress >= 30 && progress < 50 && "Création de la carte..."}
-                {progress >= 50 && progress < 80 && "Génération des questions..."}
-                {progress >= 80 && progress < 100 && "Finalisation..."}
+              <p className="font-medium text-sm text-muted-foreground">
+                {progress < 50 && "Création du projet..."}
+                {progress >= 50 && progress < 100 && "Génération des questions..."}
                 {progress >= 100 && "C'est prêt !"}
               </p>
             </div>
-            <div className="w-64 mx-auto bg-muted rounded-full h-2 overflow-hidden">
+            <div className="w-48 mx-auto bg-muted rounded-full h-2 overflow-hidden">
               <div 
                 className="h-full bg-orange-500 transition-all duration-500"
                 style={{ width: `${progress}%` }}

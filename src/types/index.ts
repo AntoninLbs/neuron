@@ -169,15 +169,30 @@ export interface UserProfile {
   mascot_accessory: string | null
   // Achats débloqués
   unlocked_items: string[]
+  // Wishlist pour la boutique
+  wishlist_colors: string[]
+  wishlist_accessories: string[]
   // Timestamps
   created_at: string
   updated_at: string
 }
 
 // ============================================
-// BOUTIQUE
+// BOUTIQUE - Réexport depuis shop-items
 // ============================================
 
+export { 
+  ALL_COLORS, 
+  ALL_ACCESSORIES, 
+  BOOSTERS, 
+  SHOP_PRICES, 
+  DAILY_REWARDS,
+  getDailyShop,
+  type ShopColor,
+  type ShopAccessory,
+} from './shop-items'
+
+// Ancien SHOP_ITEMS conservé pour compatibilité
 export const SHOP_ITEMS = {
   // Couleurs mascotte
   color_blue: { name: 'Poulpe Bleu', type: 'color', price: 100, value: '#3b82f6', icon: '🔵' },
@@ -192,11 +207,6 @@ export const SHOP_ITEMS = {
   acc_crown: { name: 'Couronne', type: 'accessory', price: 500, value: 'crown', icon: '👑' },
   acc_headphones: { name: 'Casque', type: 'accessory', price: 300, value: 'headphones', icon: '🎧' },
   acc_bowtie: { name: 'Nœud pap', type: 'accessory', price: 150, value: 'bowtie', icon: '🎀' },
-  // Thèmes bonus
-  theme_gaming: { name: 'Gaming', type: 'theme', price: 300, value: 'gaming', icon: '🎮' },
-  theme_space: { name: 'Espace', type: 'theme', price: 300, value: 'space', icon: '🚀' },
-  theme_crypto: { name: 'Crypto', type: 'theme', price: 400, value: 'crypto', icon: '₿' },
-  theme_ia: { name: 'Intelligence Artificielle', type: 'theme', price: 400, value: 'ia', icon: '🤖' },
 } as const
 
 export type ShopItemKey = keyof typeof SHOP_ITEMS
